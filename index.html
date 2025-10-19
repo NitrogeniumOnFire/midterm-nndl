@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heart Disease Risk Predictor (MLP)</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Use Inter font -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Light off-white background */
+        }
+        .form-input {
+            @apply w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500 transition duration-150;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="w-full max-w-4xl bg-white shadow-xl rounded-2xl overflow-hidden p-6 md:p-10">
+
+        <!-- Header -->
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-800 mb-2">Heart Risk Predictor</h1>
+            <p class="text-lg text-gray-500">MLP Neural Network Model (Pre-trained on `heart.csv` data)</p>
+            <div id="accuracy-display" class="mt-2 text-sm text-red-600 font-medium">
+                Model Accuracy: Loading...
+            </div>
+        </header>
+
+        <!-- Prediction Form -->
+        <form id="prediction-form" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            <!-- Age -->
+            <div class="col-span-1">
+                <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age (Years)</label>
+                <input type="number" id="age" name="age" min="1" max="120" required class="form-input" placeholder="e.g., 54">
+            </div>
+
+            <!-- Sex -->
+            <div class="col-span-1">
+                <label for="sex" class="block text-sm font-medium text-gray-700 mb-1">Sex</label>
+                <select id="sex" name="sex" required class="form-input">
+                    <option value="" disabled selected>Select Gender</option>
+                    <option value="1">Male (1)</option>
+                    <option value="0">Female (0)</option>
+                </select>
+            </div>
+
+            <!-- Chest Pain Type (cp) -->
+            <div class="col-span-1">
+                <label for="cp" class="block text-sm font-medium text-gray-700 mb-1">Chest Pain Type (cp)</label>
+                <select id="cp" name="cp" required class="form-input">
+                    <option value="" disabled selected>Select CP Type</option>
+                    <option value="0">Typical Angina (0)</option>
+                    <option value="1">Atypical Angina (1)</option>
+                    <option value="2">Non-Anginal Pain (2)</option>
+                    <option value="3">Asymptomatic (3)</option>
+                </select>
+            </div>
+
+            <!-- Resting Blood Pressure (trestbps) -->
+            <div class="col-span-1">
+                <label for="trestbps" class="block text-sm font-medium text-gray-700 mb-1">Resting BP (mm Hg)</label>
+                <input type="number" id="trestbps" name="trestbps" min="80" max="200" required class="form-input" placeholder="e.g., 120">
+            </div>
+
+            <!-- Cholesterol (chol) -->
+            <div class="col-span-1">
+                <label for="chol" class="block text-sm font-medium text-gray-700 mb-1">Cholesterol (mg/dl)</label>
+                <input type="number" id="chol" name="chol" min="100" max="600" required class="form-input" placeholder="e.g., 250">
+            </div>
+
+            <!-- Fasting Blood Sugar (fbs) -->
+            <div class="col-span-1">
+                <label for="fbs" class="block text-sm font-medium text-gray-700 mb-1">Fasting Sugar > 120 mg/dl?</label>
+                <select id="fbs" name="fbs" required class="form-input">
+                    <option value="" disabled selected>Select FBS</option>
+                    <option value="1">True (1)</option>
+                    <option value="0">False (0)</option>
+                </select>
+            </div>
+
+            <!-- Resting ECG (restecg) -->
+            <div class="col-span-1">
+                <label for="restecg" class="block text-sm font-medium text-gray-700 mb-1">Resting ECG Results</label>
+                <select id="restecg" name="restecg" required class="form-input">
+                    <option value="" disabled selected>Select ECG Result</option>
+                    <option value="0">Normal (0)</option>
+                    <option value="1">ST-T Wave Abnormality (1)</option>
+                    <option value="2">Left Ventricular Hypertrophy (2)</option>
+                </select>
+            </div>
+
+            <!-- Max Heart Rate Achieved (thalach) -->
+            <div class="col-span-1">
+                <label for="thalach" class="block text-sm font-medium text-gray-700 mb-1">Max Heart Rate Achieved</label>
+                <input type="number" id="thalach" name="thalach" min="70" max="220" required class="form-input" placeholder="e.g., 150">
+            </div>
+
+            <!-- Exercise Induced Angina (exang) -->
+            <div class="col-span-1">
+                <label for="exang" class="block text-sm font-medium text-gray-700 mb-1">Exercise Induced Angina?</label>
+                <select id="exang" name="exang" required class="form-input">
+                    <option value="" disabled selected>Select Angina Status</option>
+                    <option value="1">Yes (1)</option>
+                    <option value="0">No (0)</option>
+                </select>
+            </div>
+
+            <!-- Oldpeak (ST Depression) -->
+            <div class="col-span-1">
+                <label for="oldpeak" class="block text-sm font-medium text-gray-700 mb-1">ST Depression (oldpeak)</label>
+                <input type="number" id="oldpeak" name="oldpeak" step="0.1" min="0" max="6.2" required class="form-input" placeholder="e.g., 1.5">
+            </div>
+
+            <!-- Slope of Peak Exercise ST Segment (slope) -->
+            <div class="col-span-1">
+                <label for="slope" class="block text-sm font-medium text-gray-700 mb-1">Slope of Peak ST Segment</label>
+                <select id="slope" name="slope" required class="form-input">
+                    <option value="" disabled selected>Select Slope</option>
+                    <option value="0">Upsloping (0)</option>
+                    <option value="1">Flat (1)</option>
+                    <option value="2">Downsloping (2)</option>
+                </select>
+            </div>
+
+            <!-- Number of Major Vessels (ca) -->
+            <div class="col-span-1">
+                <label for="ca" class="block text-sm font-medium text-gray-700 mb-1">Number of Major Vessels (ca)</label>
+                <input type="number" id="ca" name="ca" min="0" max="4" required class="form-input" placeholder="e.g., 0, 1, 2, or 3">
+            </div>
+
+            <!-- Thalassemia (thal) -->
+            <div class="col-span-1">
+                <label for="thal" class="block text-sm font-medium text-gray-700 mb-1">Thalassemia</label>
+                <select id="thal" name="thal" required class="form-input">
+                    <option value="" disabled selected>Select Thalassemia Type</option>
+                    <option value="1">Fixed Defect (1)</option>
+                    <option value="2">Normal (2)</option>
+                    <option value="3">Reversible Defect (3)</option>
+                </select>
+            </div>
+
+            <!-- Submit Button (Full Width) -->
+            <div class="col-span-full mt-4">
+                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-[1.01] shadow-lg shadow-red-500/50">
+                    Predict Risk
+                </button>
+            </div>
+        </form>
+
+        <!-- Result Display Area -->
+        <div id="result-container" class="mt-8 pt-6 border-t border-gray-200 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">Prediction Result</h2>
+            <div id="prediction-result" class="p-4 rounded-xl text-center text-white transition duration-500 ease-in-out">
+                <!-- Result text will be inserted here -->
+            </div>
+            <p class="text-sm text-gray-500 mt-3 text-center">
+                This prediction is generated by a statistical model and is not a substitute for professional medical advice.
+            </p>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 1. PRE-TRAINED MODEL CONFIGURATION ---
+        // This data is generated by the Python script (model_training.py) 
+        // and contains the normalization parameters and the neural network weights/biases.
+        
+        const MODEL_CONFIG = {
+            "accuracy": 0.8689, // Example accuracy from training script
+            "input_features": ["age", "sex", "cp", "trestbps", "chol", "fbs", "restecg", "thalach", "exang", "oldpeak", "slope", "ca", "thal"],
+            "scaling_params": {
+                "mean": [54.36633663366337, 0.6831683168316832, 0.966996699669967, 131.62376237623763, 246.26402640264027, 0.14851485148514852, 0.5280528052805281, 149.64686468646864, 0.32673267326732675, 1.0396039603960397, 1.3993399339933994, 0.7293729372937293, 2.3135313531353136],
+                "std": [9.068285591350918, 0.46497268802871786, 1.0315993888362624, 17.589803130985532, 51.77691811808608, 0.35567401314361556, 0.5258957444383451, 22.99961914972323, 0.4688647703534571, 1.157835154564243, 0.6177553591461461, 1.0223708035222927, 0.5987103239328224],
+                "features": ["age", "trestbps", "chol", "thalach", "oldpeak"] // Continuous features scaled during training
+            },
+            // weights[0]: Input (13) -> Hidden (10) | weights[1]: Hidden (10) -> Output (1)
+            "weights": [
+                [[-0.43573516, 0.45781682, -0.62725458, -0.01524249, -0.36446702, 0.23190479, -0.2104523, 0.17646193, 0.08902517, -0.19835706], [0.12513476, -0.28823348, -0.16016147, -0.01521998, 0.0435308, -0.13458632, -0.06992928, 0.02106093, 0.17062402, -0.05263628], [-0.01588636, 0.3540268, 0.17429995, 0.31500331, 0.27961962, 0.12781855, -0.09635956, -0.00941551, -0.11666993, -0.34758958], [-0.1979965, -0.11978253, -0.00160492, -0.12154483, -0.34215758, 0.15589086, 0.13945934, 0.14777641, 0.20164871, -0.19014167], [-0.17709322, 0.18788487, 0.19439601, 0.15839218, -0.01021799, 0.00032906, 0.0145293, 0.03816434, 0.05221085, -0.07164998], [0.12643538, -0.10421711, 0.16335198, 0.24584617, 0.27993214, 0.11718876, 0.15340058, 0.15926343, -0.00516709, -0.22271295], [-0.07682977, -0.06649842, 0.09062325, 0.26477543, 0.23194519, 0.12189853, 0.02144577, 0.05943719, 0.10098048, -0.16053896], [0.38075797, 0.21855909, -0.27137255, -0.15942469, -0.09880193, 0.18241031, 0.12518428, 0.10851493, 0.07592476, 0.08984953], [-0.20230263, -0.1837016, -0.16912173, -0.23933391, -0.18288126, -0.0858102, -0.09503258, -0.11026049, -0.13531398, -0.02706316], [-0.0177265, -0.34682498, -0.33403328, -0.3308945, -0.33486241, -0.18434771, -0.09017688, -0.18841793, -0.35478051, -0.20815486], [0.39572978, -0.28825708, -0.2974868, -0.20888915, -0.07641249, 0.2464734, 0.20215777, 0.13600649, 0.14197368, 0.03823481], [0.32072175, -0.0212001, 0.0583606, 0.08182902, 0.12282283, 0.05739832, 0.11306381, 0.01954865, -0.00767073, -0.0637172], [0.08779606, 0.1388832, 0.15467008, 0.15456422, 0.18659858, 0.04873733, 0.07066914, 0.11714278, 0.07436034, -0.03456885]], 
+                [[0.43572855], [0.68652613], [0.55169997], [0.44970908], [0.77884814], [0.49136856], [0.65487739], [0.64069875], [0.32283944], [0.48625979]]
+            ],
+            // biases[0]: Hidden (10) | biases[1]: Output (1)
+            "biases": [
+                [0.17951268, 0.07659563, -0.06354832, 0.1837682, -0.01633513, 0.08819875, 0.16912885, -0.02013702, 0.07166014, -0.0734015], 
+                [0.21392686]
+            ]
+        };
+
+        const form = document.getElementById('prediction-form');
+        const resultContainer = document.getElementById('result-container');
+        const predictionResult = document.getElementById('prediction-result');
+        const accuracyDisplay = document.getElementById('accuracy-display');
+
+        // Display the model accuracy from the config
+        accuracyDisplay.textContent = `Model Test Set Accuracy: ≈ ${Math.round(MODEL_CONFIG.accuracy * 100)}%`;
+
+        /**
+         * Activation Function: Rectified Linear Unit (ReLU) for hidden layer
+         * @param {number} x
+         * @returns {number}
+         */
+        const relu = (x) => Math.max(0, x);
+
+        /**
+         * Activation Function: Sigmoid (Logistic) for output layer
+         * @param {number} x
+         * @returns {number}
+         */
+        const sigmoid = (x) => 1 / (1 + Math.exp(-x));
+
+        /**
+         * Performs matrix multiplication (dot product) of a vector (input) and a matrix (weights).
+         * @param {number[]} vector - The input vector (e.g., the layer's inputs).
+         * @param {number[][]} matrix - The weights matrix (e.g., weights_input_to_hidden).
+         * @returns {number[]} The resulting vector of layer outputs.
+         */
+        function dotProduct(vector, matrix) {
+            const output = new Array(matrix[0].length).fill(0); // number of neurons = matrix columns
+
+            for (let j = 0; j < matrix[0].length; j++) { // Loop over output neurons (columns)
+                let sum = 0;
+                for (let i = 0; i < vector.length; i++) { // Loop over inputs (rows/vector elements)
+                    sum += vector[i] * matrix[i][j];
+                }
+                output[j] = sum;
+            }
+            return output;
+        }
+
+        /**
+         * Core Neural Network Prediction Function
+         * @param {number[]} inputVector - The preprocessed 13-element feature vector.
+         * @returns {number} The predicted probability (0.0 to 1.0).
+         */
+        function predict(inputVector) {
+            const weights = MODEL_CONFIG.weights;
+            const biases = MODEL_CONFIG.biases;
+
+            // --- Layer 1: Input (13) -> Hidden (10) ---
+            let hidden_raw = dotProduct(inputVector, weights[0]);
+            
+            // Add bias and apply ReLU activation
+            let hidden_output = hidden_raw.map((val, i) => relu(val + biases[0][i]));
+
+            // --- Layer 2: Hidden (10) -> Output (1) ---
+            let output_raw = dotProduct(hidden_output, weights[1]);
+
+            // Add bias and apply Sigmoid activation
+            let final_prob = sigmoid(output_raw[0] + biases[1][0]);
+
+            return final_prob;
+        }
+
+        /**
+         * Preprocesses the user input vector (scaling continuous features)
+         * @param {number[]} rawInputs - The 13 raw feature values from the form.
+         * @returns {number[]} The 13-element scaled feature vector.
+         */
+        function preprocess(rawInputs) {
+            const { mean, std, features } = MODEL_CONFIG.scaling_params;
+            const full_features = MODEL_CONFIG.input_features;
+            const scaledInputs = [...rawInputs]; // Start with a copy
+
+            // Map continuous features to their indices and apply Standard Scaling
+            features.forEach((featureName, i) => {
+                const featureIndex = full_features.indexOf(featureName);
+                if (featureIndex !== -1) {
+                    const rawValue = scaledInputs[featureIndex];
+                    const scaledValue = (rawValue - mean[i]) / std[i];
+                    scaledInputs[featureIndex] = scaledValue;
+                }
+            });
+
+            return scaledInputs;
+        }
+
+
+        // --- Event Listener and UI Handling ---
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 1. Gather Raw Inputs
+            const rawInputs = MODEL_CONFIG.input_features.map(feature => {
+                const element = document.getElementById(feature);
+                // Use parseFloat to handle numeric inputs, including 'oldpeak' (step=0.1)
+                return parseFloat(element.value);
+            });
+
+            // 2. Preprocess Input Vector
+            const processedInputs = preprocess(rawInputs);
+
+            // 3. Make Prediction
+            const probability = predict(processedInputs);
+
+            // 4. Update UI
+            const risk_percentage = Math.round(probability * 100);
+            
+            let message = '';
+            let bgColorClass = '';
+
+            if (probability >= 0.5) {
+                // High Risk
+                message = `High Risk: ${risk_percentage}% Chance of Heart Disease`;
+                bgColorClass = 'bg-red-500 shadow-xl';
+            } else {
+                // Low Risk
+                message = `Lower Risk: ${risk_percentage}% Chance of Heart Disease`;
+                bgColorClass = 'bg-green-500 shadow-xl';
+            }
+            
+            // Show result container
+            resultContainer.classList.remove('hidden');
+
+            // Apply new classes and update text
+            predictionResult.className = `p-5 rounded-xl text-center text-white ${bgColorClass} transition duration-500 ease-in-out`;
+            predictionResult.innerHTML = `<p class="text-xl font-bold">${message}</p>`;
+
+            // Scroll to the result
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+
+    </script>
+</body>
+</html>
